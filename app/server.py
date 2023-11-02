@@ -7,8 +7,9 @@ from dotenv import dotenv_values
 
 cfg = dotenv_values(".env")
 app = FastAPI(title="APIGateway")
-
 gateway = APIGateway(app, cfg, JWTEncoder(cfg), {
     "user": Service(cfg["USER_SERVICE"])
-    })
+    },
+    [cfg['CLIENT']]
+    )
 gateway.configure_routes()

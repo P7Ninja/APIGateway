@@ -9,7 +9,9 @@ Make a `.env` file in the root directory and create the variables where `<VAR>` 
 JWT_SECRET=<SECRET>
 JWT_ALG=<ALG>
 EXPIRE=<EXP>
+CLIENT=<<PROTOCOL>://IP:PORT>
 <XXXX_SERVICE>=<<PROTOCOL>://IP:PORT>
+
 ```
 
 remember to run the services at another port than the apigateway, if runnig on the same machine.

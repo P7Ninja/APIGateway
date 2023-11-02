@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from typing import Annotated
 from datetime import timedelta
 import json
-
+from fastapi.middleware.cors import CORSMiddleware
 
 from .Service import Service, ResponseType
 from .Authentication import JWTEncoder
@@ -12,18 +12,25 @@ from . import schema
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 class APIGateway:
-    def __init__(self, app: FastAPI, cfg: dict, jwtencoder: JWTEncoder, services: dict[str, Service]) -> None:
+    def __init__(self, app: FastAPI, cfg: dict, jwtencoder: JWTEncoder, services: dict[str, Service], origins: list[str]) -> None:
         self.__app = app
         self.__cfg = cfg
         self.__jwt = jwtencoder
         self.__services = services
-        
+        self.__app.add_middleware(
+            CORSMiddleware,
+            allow_origins=origins,
+            allow_credentials=True,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
 
     def configure_routes(self):
         self.__app.add_api_route("/user", self.get_user, methods=["GET"], status_code=200)
         self.__app.add_api_route("/user", self.create_user, methods=["POST"], status_code=201)
         self.__app.add_api_route("/user", self.delete_user, methods=["DELETE"], status_code=200)
         self.__app.add_api_route("/login", self.login, methods=["POST"], status_code=200)
+        self.__app.add_api_route("/hello", self.hello, methods=["GET"])
 
     def auth(self, token: str):
         credentials_exception = HTTPException(
@@ -74,3 +81,6 @@ class APIGateway:
         
         token = self.__jwt.encode(form_data.username, res["id"], timedelta(days=float(self.__cfg["EXPIRE"])))
         return {"access_token": token, "token_type": "bearer"}
+
+    async def hello(self):
+        return "hello world"
