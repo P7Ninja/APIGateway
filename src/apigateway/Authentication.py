@@ -1,9 +1,5 @@
 from datetime import timedelta, datetime
-import typing
 from jose import jwt, JWTError
-from starlette.middleware.base import BaseHTTPMiddleware, DispatchFunction
-from starlette.types import ASGIApp
-from fastapi import Request
 
 
 class JWTEncoder:
