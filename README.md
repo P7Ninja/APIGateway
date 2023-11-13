@@ -9,7 +9,9 @@ Make a `.env` file in the root directory and create the variables where `<VAR>` 
 JWT_SECRET=<SECRET>
 JWT_ALG="HS256"
 EXPIRE=<EXP>
+CLIENT=<<PROTOCOL>://IP:PORT>
 <XXXX_SERVICE>=<<PROTOCOL>://IP:PORT>
+
 ```
 
 ### Secret generation
