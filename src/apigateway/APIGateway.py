@@ -30,7 +30,6 @@ class APIGateway:
         self.__app.add_api_route("/user", self.create_user, methods=["POST"], status_code=201)
         self.__app.add_api_route("/user", self.delete_user, methods=["DELETE"], status_code=200)
         self.__app.add_api_route("/login", self.login, methods=["POST"], status_code=200)
-        self.__app.add_api_route("/hello", self.hello, methods=["GET"])
 
     def auth(self, token: str):
         credentials_exception = HTTPException(
@@ -81,6 +80,3 @@ class APIGateway:
         
         token = self.__jwt.encode(form_data.username, res["id"], timedelta(days=float(self.__cfg["EXPIRE"])))
         return {"access_token": token, "token_type": "bearer"}
-
-    async def hello(self):
-        return "hello world"
