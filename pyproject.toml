@@ -1,0 +1,30 @@
+[project]
+dynamic = ["version"]
+name = "apigateway"
+authors = [
+  { name="Magnus Harder", email="mjhc@studen.aau.dk" },
+]
+description = "Description"
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+# Uncomment if you need a script.
+# [project.scripts]
+# script_name = "package_name:func"
+
+[build-system]
+requires = ["setuptools>=61.0", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "src/apigateway/__version.py"
+
+[tool.setuptools.packages.find]
+# All the following settings are optional:
+where = ["src"]
+include = ["apigateway*"]
+exclude = ["tests"]
