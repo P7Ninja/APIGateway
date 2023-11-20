@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from dotenv import dotenv_values
 import os
 
+
 cfg = dict()
 if os.path.exists(".env"):
     cfg = dotenv_values(".env")
@@ -30,10 +31,8 @@ tags_metadata = [
     {"name": "inventory", "description": "Operations with inventory"}
 ]
 
+app = FastAPI(title="APIGateway", openapi_tags=tags_metadata, version="0.1.0")
 
-app = FastAPI(title="APIGateway", openapi_tags=tags_metadata, version="0.1.0"
-              
-              )
 gateway = APIGateway(app, cfg, JWTEncoder(cfg), {
     "user": Service(cfg["USER_SERVICE"]),
     "health": Service(cfg["HEALTH_SERVICE"])
