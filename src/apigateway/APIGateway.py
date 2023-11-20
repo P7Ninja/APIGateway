@@ -26,10 +26,33 @@ class APIGateway:
         )
 
     def configure_routes(self):
-        self.__app.add_api_route("/user", self.get_user, methods=["GET"], status_code=200)
-        self.__app.add_api_route("/user", self.create_user, methods=["POST"], status_code=201)
-        self.__app.add_api_route("/user", self.delete_user, methods=["DELETE"], status_code=200)
-        self.__app.add_api_route("/login", self.login, methods=["POST"], status_code=200)
+        self.__app.add_api_route("/user", self.get_user, methods=["GET"], status_code=200, response_model=schema.User, tags=["users"])
+        self.__app.add_api_route("/user", self.create_user, methods=["POST"], status_code=201, tags=["users"])
+        self.__app.add_api_route("/user", self.delete_user, methods=["DELETE"], status_code=200, tags=["users"])
+        self.__app.add_api_route("/login", self.login, methods=["POST"], status_code=200, tags=["auth"])
+
+        self.__app.add_api_route("/health", self.create_health, methods=["POST"], status_code=201, tags=["health"])
+        self.__app.add_api_route("/health/{id}", self.delete_health, methods=["DELETE"], status_code=200, tags=["health"])
+        self.__app.add_api_route("/health/history", self.get_health_history, methods=["GET"], status_code=200, tags=["health"])
+
+    async def login(self, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+        user_service = self.__services["user"]
+        res = await user_service.request(
+            "post", 
+            "/validate", 
+            dict,
+            data=json.dumps({"username": form_data.username, "password": form_data.password}),
+            )
+            
+        if not res["success"]:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"}
+                )
+        
+        token = self.__jwt.encode(form_data.username, res["id"], timedelta(days=float(self.__cfg["EXPIRE"])))
+        return {"access_token": token, "token_type": "bearer"}
 
     def auth(self, token: str):
         credentials_exception = HTTPException(
@@ -62,21 +85,28 @@ class APIGateway:
         user_service = self.__services["user"]
         return await user_service.request("delete", f"/user/{id}", dict)
 
-    async def login(self, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-        user_service = self.__services["user"]
-        res = await user_service.request(
-            "post", 
-            "/validate", 
+    async def create_health(self, token: Annotated[str, Depends(oauth2_scheme)], health: schema.BaseHealthEntry):
+        id = self.auth(token)["id"]
+        create_health = schema.CreateHealthEntry(userID=id, **health.model_dump())
+        health_service = self.__services["health"]
+        res = await health_service.request(
+            "post", "/insertHealth",
             dict,
-            data=json.dumps({"username": form_data.username, "password": form_data.password}),
-            )
-            
-        if not res["success"]:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Bearer"}
-                )
-        
-        token = self.__jwt.encode(form_data.username, res["id"], timedelta(days=float(self.__cfg["EXPIRE"])))
-        return {"access_token": token, "token_type": "bearer"}
+            data=create_health.model_dump_json()
+        )
+        return {"success": res["success"]}
+    
+    async def delete_health(self, token: Annotated[str, Depends(oauth2_scheme)], id: int):
+        user_id = self.auth(token)["id"]
+        health_service = self.__services["health"]
+        res = await health_service.request(
+            "delete", f"/deleteHealth?id={id}&userID={user_id}",
+            dict
+        )
+        return {"success": res["success"]}
+
+    async def get_health_history(self, token: Annotated[str, Depends(oauth2_scheme)]):
+        id = self.auth(token)["id"]
+        health_service = self.__services["health"]
+        return await health_service.request("get", f"/UserHealthHistory?userID={id}", list, res_type=ResponseType.PRIM)
+
