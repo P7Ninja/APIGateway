@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field
 from datetime import date, datetime
+from typing import Optional
 
+# user service
 class BaseUser(BaseModel):
     username: str = Field(examples=["John123"])
     email: str = Field(examples=["example@email.com"])
@@ -21,3 +23,19 @@ class User(BaseUser):
     id: int
     created: datetime
     target_energy: Energy
+
+# Health service
+
+class BaseHealthEntry(BaseModel):
+    dateStamp: datetime
+    height: Optional[float] = None
+    weight: Optional[float] = None
+    fatPercentage: Optional[float] = None
+    musclePercentage:Optional[float] = None
+    waterPercentage: Optional[float] = None
+        
+class CreateHealthEntry(BaseHealthEntry):
+    userID: int  
+
+class HealthEntry(CreateHealthEntry):
+    id: int
