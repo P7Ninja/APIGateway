@@ -31,7 +31,7 @@ class Service:
         async with httpx.AsyncClient() as client:
             req = client.build_request(method, self.__dest + endpoint, data=data)
             res = (await asyncio.gather(client.send(req)))[0]
-            
+
             if res.status_code in range(400, 599):
                 err: dict = res.json()
                 detail = err.get("detail", None)
