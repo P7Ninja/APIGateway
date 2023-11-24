@@ -35,7 +35,9 @@ app = FastAPI(title="APIGateway", openapi_tags=tags_metadata, version="0.1.0")
 
 gateway = APIGateway(app, cfg, JWTEncoder(cfg), {
     "user": Service(cfg["USER_SERVICE"]),
-    "health": Service(cfg["HEALTH_SERVICE"])
+    "health": Service(cfg["HEALTH_SERVICE"]),
+    "food": Service(cfg["FOOD_SERVICE"]),
+    "inventory": Service(cfg["INVENTORY_SERVICE"])
     },
     [cfg['CLIENT']]
     )
