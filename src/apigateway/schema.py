@@ -61,10 +61,10 @@ class Discount(BaseModel):
 
 #Inventory service
 class InventoryItem(BaseModel):
-    id: int
-    foodId: int
-    expiration_date: str
-    timestamp: str
+    id: int = 0
+    foodId: int = 0
+    expirationDate: str = ""
+    timestamp: str = "2023-01-01"
 
 class Inventory(BaseModel):
     id: int = 0
