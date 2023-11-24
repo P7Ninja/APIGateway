@@ -39,3 +39,29 @@ class CreateHealthEntry(BaseHealthEntry):
 
 class HealthEntry(CreateHealthEntry):
     id: int
+
+
+# Mealplan service
+
+class BaseMealPlan(BaseModel):
+    userID: int
+    startDate: str = Field(examples=["2023-12-11"])
+    endDate: str = Field(examples=["2023-12-11"])
+
+class CreateBaseMealPlan(BaseMealPlan):
+    userID: int
+
+class mealPlanRecipe(BaseModel):
+    planID: int
+    recipeID: int
+
+class mealsPerDay(BaseModel):
+    planID: int
+    meals: int = Field(examples=[1])
+    totalCalories: int = Field(examples=[3000])
+    totalProtein: float = Field(examples=[200])
+    totalCarbohydrates: float = Field(examples=[300])
+    totalFat: float = Field(examples=[70])
+
+class mealplan(BaseMealPlan):
+    id: int

@@ -35,6 +35,14 @@ class APIGateway:
         self.__app.add_api_route("/health/{id}", self.delete_health, methods=["DELETE"], status_code=200, tags=["health"])
         self.__app.add_api_route("/health/history", self.get_health_history, methods=["GET"], status_code=200, tags=["health"])
 
+        self.__app.add_api_route("/meal", self.create_meal_plan, methods=["POST"], status_code=201, tags=["mealplan"])
+        # self.__app.add_api_route("/mealRecipe", self.create_meal_plan_recipe, methods=["POST"], status_code=201, tags=["mealplan"])
+        # self.__app.add_api_route("/mealsPerDay", self.create_meals_per_day, methods=["POST"], status_code=201, tags=["mealplan"])
+        # self.__app.add_api_route("/mealPlan/{userID}", self.get_current_meal_plan, methods=["GET"], status_code=200, tags=["mealplan"])
+        # self.__app.add_api_route("/mealPlan/all/{userID}", self.get_all_meal_plans, methods=["GET"], status_code=200, tags=["mealplan"])
+        # self.__app.add_api_route("/mealPlan/{planID}", self.delete_meal_plan, methods=["DELETE"], status_code=200, tags=["mealplan"])
+        # self.__app.add_api_route("/generate/", self.generate_meal_plan, methods=["POST"], status_code=201, tags=["mealplan"])
+
     async def login(self, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         user_service = self.__services["user"]
         res = await user_service.request(
@@ -110,3 +118,13 @@ class APIGateway:
         health_service = self.__services["health"]
         return await health_service.request("get", f"/UserHealthHistory?userID={id}", list, res_type=ResponseType.PRIM)
 
+    async def create_meal_plan(self, token: Annotated[str, Depends(oauth2_scheme)], meal: schema.BaseMealPlan):
+        user_id = self.auth(token)["id"]
+        # meal_plan = schema.CreateBaseMealPlan(userID=user_id, **meal.model_dump())
+        mealplan_service = self.__services["mealplan"]
+        await mealplan_service.request(
+            "post", "/meal",
+            int,
+            data=meal.model_dump_json()
+        )
+        return {"success"}
