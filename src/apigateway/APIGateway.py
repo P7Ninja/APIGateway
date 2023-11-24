@@ -140,12 +140,12 @@ class APIGateway:
     async def delete_inv_item(self, token: Annotated[str, Depends(oauth2_scheme)], inv_id: int, inv_item: schema.Inventory):
         id = self.auth(token)["id"]
         user_service = self.__services["user"]
-        return await user_service.request("delete", f"api//inventories/{inv_id}/{inv_item.id}", dict)
+        return await user_service.request("delete", f"api/inventories/{inv_id}/{inv_item.id}", dict)
     
     async def put_inv(self, token: Annotated[str, Depends(oauth2_scheme)], inventory: schema.Inventory):
         id = self.auth(token)["id"]
         user_service = self.__services["user"]
-        return await user_service.request("put", f"api//inventories/{inventory.id}", dict)
+        return await user_service.request("put", f"api/inventories/{inventory.id}", dict)
 
     
 
