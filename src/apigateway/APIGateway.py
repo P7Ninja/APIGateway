@@ -129,20 +129,23 @@ class APIGateway:
     
     async def delete_inv(self, inv_id: int, inventory: schema.Inventory, token: Annotated[str, Depends(oauth2_scheme)]):
         id = self.auth(token)["id"]
-        if id != inventory.userId or inv_id != inventory.id:
+        if id != inventory.userId:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        if inventory.id != inv_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
         inventory_service = self.__services["inventory"]
-        return await inventory_service.request("delete", f"/inventories/{inv_id}", None, ResponseType.PRIM)
+        print("inv id: ", inv_id)
+        return await inventory_service.request("delete", f"/api/inventories/{inv_id}", dict, ResponseType.DICT)
     
     async def delete_inv_item(self, token: Annotated[str, Depends(oauth2_scheme)], inv_id: int, inv_item: schema.Inventory):
         id = self.auth(token)["id"]
         user_service = self.__services["user"]
-        return await user_service.request("delete", f"/inventories/{inv_id}/{inv_item.id}", dict)
+        return await user_service.request("delete", f"api//inventories/{inv_id}/{inv_item.id}", dict)
     
     async def put_inv(self, token: Annotated[str, Depends(oauth2_scheme)], inventory: schema.Inventory):
         id = self.auth(token)["id"]
         user_service = self.__services["user"]
-        return await user_service.request("put", f"/inventories/{inventory.id}", dict)
+        return await user_service.request("put", f"api//inventories/{inventory.id}", dict)
 
     
 
