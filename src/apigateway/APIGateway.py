@@ -34,6 +34,7 @@ class APIGateway:
         # inventory service
         self.__app.add_api_route("/inventories", self.get_invs, methods=["GET"], status_code=200)
         self.__app.add_api_route("/inventories/{inv_id}", self.post_to_inv, methods=["POST"], status_code=200)
+        self.__app.add_api_route("/inventories", self.post_inv, methods=["POST"], status_code=200)
         self.__app.add_api_route("/inventories/{inv_id}", self.delete_inv, methods=["DELETE"], status_code=200)
         self.__app.add_api_route("/inventories/{inv_id}/{item_id}", self.delete_inv_item, methods=["DELETE"], status_code=200)
         self.__app.add_api_route("/inventories/{inv_id}", self.put_inv, methods=["PUT"], status_code=200)
@@ -71,8 +72,8 @@ class APIGateway:
         food_service = self.__services["food"]
         res = await food_service.request(
             "get", f"/api/foods?query={query}",
-            schema.Food,
-            dict
+            list,
+            ResponseType.PRIM
         )
         return res
     
@@ -96,11 +97,13 @@ class APIGateway:
 
     async def post_foods_list(self, food_ids: list[int] ):
         food_service = self.__services["food"]
+        string = str(food_ids)
+        print(string)
         res = await food_service.request(
             "post", f"/api/foods/list",
-            schema.Food,
-            dict,
-            food_ids
+            list,
+            ResponseType.PRIM,
+            data = string
         )
         return res
     
@@ -121,15 +124,17 @@ class APIGateway:
     async def post_inv(self, token: Annotated[str, Depends(oauth2_scheme)], inventory: schema.Inventory):
         id = self.auth(token)["id"]
         inv_service = self.__services["inventory"]
-        res = await inv_service.request("post", f"/api/inventories", schema.Inventory, dict, inventory.model_dump_json())
+        res = await inv_service.request("post", f"/api/inventories", schema.Inventory, ResponseType.DICT, inventory.model_dump_json())
         return res
     
-    async def delete_inv(self, token: Annotated[str, Depends(oauth2_scheme)], inventory: schema.Inventory):
+    async def delete_inv(self, inv_id: int, inventory: schema.Inventory, token: Annotated[str, Depends(oauth2_scheme)]):
         id = self.auth(token)["id"]
-        user_service = self.__services["user"]
-        return await user_service.request("delete", f"/inventories/{id}", dict)
+        if id != inventory.userId or inv_id != inventory.id:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        inventory_service = self.__services["inventory"]
+        return await inventory_service.request("delete", f"/inventories/{inv_id}", None, ResponseType.PRIM)
     
-    async def delete_inv_item(self, token: Annotated[str, Depends(oauth2_scheme)],inv_id: int, inv_item: schema.Inventory):
+    async def delete_inv_item(self, token: Annotated[str, Depends(oauth2_scheme)], inv_id: int, inv_item: schema.Inventory):
         id = self.auth(token)["id"]
         user_service = self.__services["user"]
         return await user_service.request("delete", f"/inventories/{inv_id}/{inv_item.id}", dict)

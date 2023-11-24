@@ -29,7 +29,7 @@ class Service:
                       data: str = None,
                       ) -> T:
         async with httpx.AsyncClient() as client:
-            req = client.build_request(method, self.__dest + endpoint, data=data)
+            req = client.build_request(method, self.__dest + endpoint, data=data, headers= {"Content-Type": "application/json"})
             res = (await asyncio.gather(client.send(req)))[0]
 
             if res.status_code in range(400, 599):

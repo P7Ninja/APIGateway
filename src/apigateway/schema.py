@@ -67,7 +67,7 @@ class InventoryItem(BaseModel):
     timestamp: str
 
 class Inventory(BaseModel):
-    id: int
-    user_id: int
+    id: int = 0
+    userId: int
     name: str
-    items: list[InventoryItem]
+    items: list[InventoryItem] = []
