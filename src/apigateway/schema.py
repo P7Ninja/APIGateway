@@ -44,7 +44,6 @@ class HealthEntry(CreateHealthEntry):
 # Mealplan service
 
 class BaseMealPlan(BaseModel):
-    userID: int
     startDate: str = Field(examples=["2023-12-11"])
     endDate: str = Field(examples=["2023-12-11"])
 

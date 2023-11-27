@@ -4,6 +4,7 @@ from typing import Annotated
 from datetime import timedelta
 import json
 from fastapi.middleware.cors import CORSMiddleware
+from typing import List
 
 from .Service import Service, ResponseType
 from .Authentication import JWTEncoder
@@ -36,12 +37,12 @@ class APIGateway:
         self.__app.add_api_route("/health/history", self.get_health_history, methods=["GET"], status_code=200, tags=["health"])
 
         self.__app.add_api_route("/meal", self.create_meal_plan, methods=["POST"], status_code=201, tags=["mealplan"])
-        # self.__app.add_api_route("/mealRecipe", self.create_meal_plan_recipe, methods=["POST"], status_code=201, tags=["mealplan"])
-        # self.__app.add_api_route("/mealsPerDay", self.create_meals_per_day, methods=["POST"], status_code=201, tags=["mealplan"])
-        # self.__app.add_api_route("/mealPlan/{userID}", self.get_current_meal_plan, methods=["GET"], status_code=200, tags=["mealplan"])
-        # self.__app.add_api_route("/mealPlan/all/{userID}", self.get_all_meal_plans, methods=["GET"], status_code=200, tags=["mealplan"])
-        # self.__app.add_api_route("/mealPlan/{planID}", self.delete_meal_plan, methods=["DELETE"], status_code=200, tags=["mealplan"])
-        # self.__app.add_api_route("/generate/", self.generate_meal_plan, methods=["POST"], status_code=201, tags=["mealplan"])
+        self.__app.add_api_route("/mealRecipe", self.create_meal_plan_recipe, methods=["POST"], status_code=201, tags=["mealplan"])
+        self.__app.add_api_route("/mealsPerDay", self.create_meals_per_day, methods=["POST"], status_code=201, tags=["mealplan"])
+        self.__app.add_api_route("/generate/", self.generate_meal_plan, methods=["POST"], status_code=201, tags=["mealplan"])
+        self.__app.add_api_route("/mealPlan", self.get_current_meal_plan, methods=["GET"], status_code=200, tags=["mealplan"])
+        self.__app.add_api_route("/mealPlan/all", self.get_all_meal_plans, methods=["GET"], status_code=200, tags=["mealplan"])
+        self.__app.add_api_route("/mealPlan", self.delete_meal_plan, methods=["DELETE"], status_code=200, tags=["mealplan"])
 
     async def login(self, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         user_service = self.__services["user"]
@@ -120,11 +121,66 @@ class APIGateway:
 
     async def create_meal_plan(self, token: Annotated[str, Depends(oauth2_scheme)], meal: schema.BaseMealPlan):
         user_id = self.auth(token)["id"]
-        # meal_plan = schema.CreateBaseMealPlan(userID=user_id, **meal.model_dump())
+        meal_plan = schema.CreateBaseMealPlan(userID=user_id, **meal.model_dump())
         mealplan_service = self.__services["mealplan"]
         await mealplan_service.request(
-            "post", "/meal",
+            "post", "/mealPlan",
             int,
-            data=meal.model_dump_json()
+            data=meal_plan.model_dump_json(),
+            res_type=ResponseType.PRIM
         )
-        return {"success"}
+        return {"success": True}
+    
+    async def create_meal_plan_recipe(self, mealRecipe: schema.mealPlanRecipe):
+        mealplan_service = self.__services["mealplan"]
+        await mealplan_service.request(
+            "post", "/mealPlanRecipe",
+            str,
+            data=mealRecipe.model_dump_json(),
+            res_type=ResponseType.PRIM
+        )
+        return {"success": True}
+    
+    async def create_meals_per_day(self, mealsPerDay: schema.mealsPerDay):
+        mealplan_service = self.__services["mealplan"]
+        await mealplan_service.request(
+            "post", "/mealsPerDay",
+            str,
+            data=mealsPerDay.model_dump_json(),
+            res_type=ResponseType.PRIM
+        )
+        return {"success": True}
+    
+
+    async def generate_meal_plan(self, token: Annotated[str, Depends(oauth2_scheme)], targets: List[int], split_days: List[int]):
+        user_id = self.auth(token)["id"]
+        mealplan_service = self.__services["mealplan"]
+        await mealplan_service.request(
+            "post", "/generate/",
+            str,
+            data=(user_id, targets, split_days),
+            res_type=ResponseType.PRIM
+        )
+        return {"success": True}
+    
+    async def get_current_meal_plan(self, token: Annotated[str, Depends(oauth2_scheme)]):
+        user_id = self.auth(token)["id"]
+        mealplan_service = self.__services["mealplan"]
+        return await mealplan_service.request("get", f"/mealPlan/{user_id}", dict, res_type=ResponseType.PRIM)
+
+    async def get_all_meal_plans(self, token: Annotated[str, Depends(oauth2_scheme)]):
+        user_id = self.auth(token)["id"]
+        mealplan_service = self.__services["mealplan"]
+        return await mealplan_service.request("get", f"/mealPlans/{user_id}", dict, res_type=ResponseType.PRIM)
+
+    async def delete_meal_plan(self, token: Annotated[str, Depends(oauth2_scheme)], planID: int):
+        user_id = self.auth(token)["id"]
+        mealplan_service = self.__services["mealplan"]
+        res = await mealplan_service.request(
+            "delete", f"/mealPlan/{planID}/{user_id}",
+            str,
+            res_type=ResponseType.PRIM
+        )
+        return {"success": True}
+        
+
