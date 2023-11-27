@@ -39,7 +39,7 @@ class APIGateway:
         self.__app.add_api_route("/meal", self.create_meal_plan, methods=["POST"], status_code=201, tags=["mealplan"])
         self.__app.add_api_route("/mealRecipe", self.create_meal_plan_recipe, methods=["POST"], status_code=201, tags=["mealplan"])
         self.__app.add_api_route("/mealsPerDay", self.create_meals_per_day, methods=["POST"], status_code=201, tags=["mealplan"])
-        self.__app.add_api_route("/generate/", self.generate_meal_plan, methods=["POST"], status_code=201, tags=["mealplan"])
+        self.__app.add_api_route("/generate", self.generate_meal_plan, methods=["POST"], status_code=201, tags=["mealplan"])
         self.__app.add_api_route("/mealPlan", self.get_current_meal_plan, methods=["GET"], status_code=200, tags=["mealplan"])
         self.__app.add_api_route("/mealPlan/all", self.get_all_meal_plans, methods=["GET"], status_code=200, tags=["mealplan"])
         self.__app.add_api_route("/mealPlan", self.delete_meal_plan, methods=["DELETE"], status_code=200, tags=["mealplan"])
@@ -131,7 +131,7 @@ class APIGateway:
         )
         return {"success": True}
     
-    async def create_meal_plan_recipe(self, mealRecipe: schema.mealPlanRecipe):
+    async def create_meal_plan_recipe(self, mealRecipe: schema.MealPlanRecipe):
         mealplan_service = self.__services["mealplan"]
         await mealplan_service.request(
             "post", "/mealPlanRecipe",
@@ -141,7 +141,7 @@ class APIGateway:
         )
         return {"success": True}
     
-    async def create_meals_per_day(self, mealsPerDay: schema.mealsPerDay):
+    async def create_meals_per_day(self, mealsPerDay: schema.MealsPerDay):
         mealplan_service = self.__services["mealplan"]
         await mealplan_service.request(
             "post", "/mealsPerDay",
@@ -152,14 +152,14 @@ class APIGateway:
         return {"success": True}
     
 
-    async def generate_meal_plan(self, token: Annotated[str, Depends(oauth2_scheme)], targets: List[int], split_days: List[int]):
+    async def generate_meal_plan(self, token: Annotated[str, Depends(oauth2_scheme)], generate_meal: schema.GenerateMealPlan):
         user_id = self.auth(token)["id"]
         mealplan_service = self.__services["mealplan"]
+        generate_meal_plan = schema.CreateGenerateMealplan(userID=user_id, **generate_meal.model_dump())
         await mealplan_service.request(
-            "post", "/generate/",
-            str,
-            data=(user_id, targets, split_days),
-            res_type=ResponseType.PRIM
+            "post", "/generate",
+            dict,
+            data=generate_meal_plan.model_dump_json()
         )
         return {"success": True}
     
@@ -176,7 +176,7 @@ class APIGateway:
     async def delete_meal_plan(self, token: Annotated[str, Depends(oauth2_scheme)], planID: int):
         user_id = self.auth(token)["id"]
         mealplan_service = self.__services["mealplan"]
-        res = await mealplan_service.request(
+        await mealplan_service.request(
             "delete", f"/mealPlan/{planID}/{user_id}",
             str,
             res_type=ResponseType.PRIM

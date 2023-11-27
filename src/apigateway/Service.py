@@ -30,8 +30,9 @@ class Service:
                       ) -> T:
         async with httpx.AsyncClient() as client:
             req = client.build_request(method, self.__dest + endpoint, data=data)
-            res = (await asyncio.gather(client.send(req)))[0]
+            res = (await asyncio.gather(client.send(req, follow_redirects=True)))[0]
 
+            print(res)
             if res.status_code in range(400, 599):
                 err: dict = res.json()
                 detail = err.get("detail", None)
