@@ -4,6 +4,7 @@ from typing import Annotated
 from datetime import timedelta
 import json
 from fastapi.middleware.cors import CORSMiddleware
+from typing import List
 
 from .Service import Service, ResponseType
 from .Authentication import JWTEncoder
@@ -34,6 +35,14 @@ class APIGateway:
         self.__app.add_api_route("/health", self.create_health, methods=["POST"], status_code=201, tags=["health"])
         self.__app.add_api_route("/health/{id}", self.delete_health, methods=["DELETE"], status_code=200, tags=["health"])
         self.__app.add_api_route("/health/history", self.get_health_history, methods=["GET"], status_code=200, tags=["health"])
+
+        self.__app.add_api_route("/meal", self.create_meal_plan, methods=["POST"], status_code=201, tags=["mealplan"])
+        self.__app.add_api_route("/mealRecipe", self.create_meal_plan_recipe, methods=["POST"], status_code=201, tags=["mealplan"])
+        self.__app.add_api_route("/mealsPerDay", self.create_meals_per_day, methods=["POST"], status_code=201, tags=["mealplan"])
+        self.__app.add_api_route("/generate", self.generate_meal_plan, methods=["POST"], status_code=201, tags=["mealplan"])
+        self.__app.add_api_route("/mealPlan", self.get_current_meal_plan, methods=["GET"], status_code=200, tags=["mealplan"])
+        self.__app.add_api_route("/mealPlan/all", self.get_all_meal_plans, methods=["GET"], status_code=200, tags=["mealplan"])
+        self.__app.add_api_route("/mealPlan", self.delete_meal_plan, methods=["DELETE"], status_code=200, tags=["mealplan"])
 
     async def login(self, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         user_service = self.__services["user"]
@@ -109,4 +118,69 @@ class APIGateway:
         id = self.auth(token)["id"]
         health_service = self.__services["health"]
         return await health_service.request("get", f"/UserHealthHistory?userID={id}", list, res_type=ResponseType.PRIM)
+
+    async def create_meal_plan(self, token: Annotated[str, Depends(oauth2_scheme)], meal: schema.BaseMealPlan):
+        user_id = self.auth(token)["id"]
+        meal_plan = schema.CreateBaseMealPlan(userID=user_id, **meal.model_dump())
+        mealplan_service = self.__services["mealplan"]
+        await mealplan_service.request(
+            "post", "/mealPlan",
+            int,
+            data=meal_plan.model_dump_json(),
+            res_type=ResponseType.PRIM
+        )
+        return {"success": True}
+    
+    async def create_meal_plan_recipe(self, mealRecipe: schema.MealPlanRecipe):
+        mealplan_service = self.__services["mealplan"]
+        await mealplan_service.request(
+            "post", "/mealPlanRecipe",
+            str,
+            data=mealRecipe.model_dump_json(),
+            res_type=ResponseType.PRIM
+        )
+        return {"success": True}
+    
+    async def create_meals_per_day(self, mealsPerDay: schema.MealsPerDay):
+        mealplan_service = self.__services["mealplan"]
+        await mealplan_service.request(
+            "post", "/mealsPerDay",
+            str,
+            data=mealsPerDay.model_dump_json(),
+            res_type=ResponseType.PRIM
+        )
+        return {"success": True}
+    
+
+    async def generate_meal_plan(self, token: Annotated[str, Depends(oauth2_scheme)], generate_meal: schema.GenerateMealPlan):
+        user_id = self.auth(token)["id"]
+        mealplan_service = self.__services["mealplan"]
+        generate_meal_plan = schema.CreateGenerateMealplan(userID=user_id, **generate_meal.model_dump())
+        await mealplan_service.request(
+            "post", "/generate",
+            dict,
+            data=generate_meal_plan.model_dump_json()
+        )
+        return {"success": True}
+    
+    async def get_current_meal_plan(self, token: Annotated[str, Depends(oauth2_scheme)]):
+        user_id = self.auth(token)["id"]
+        mealplan_service = self.__services["mealplan"]
+        return await mealplan_service.request("get", f"/mealPlan/{user_id}", dict, res_type=ResponseType.PRIM)
+
+    async def get_all_meal_plans(self, token: Annotated[str, Depends(oauth2_scheme)]):
+        user_id = self.auth(token)["id"]
+        mealplan_service = self.__services["mealplan"]
+        return await mealplan_service.request("get", f"/mealPlans/{user_id}", dict, res_type=ResponseType.PRIM)
+
+    async def delete_meal_plan(self, token: Annotated[str, Depends(oauth2_scheme)], planID: int):
+        user_id = self.auth(token)["id"]
+        mealplan_service = self.__services["mealplan"]
+        await mealplan_service.request(
+            "delete", f"/mealPlan/{planID}/{user_id}",
+            str,
+            res_type=ResponseType.PRIM
+        )
+        return {"success": True}
+        
 
