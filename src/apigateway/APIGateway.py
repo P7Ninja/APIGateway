@@ -46,9 +46,6 @@ class APIGateway:
         self.__app.add_api_route("/foods/list", self.post_foods_list, methods=["POST"], status_code=200)
     
 
-        
-
-
     def auth(self, token: str):
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -116,8 +113,20 @@ class APIGateway:
     async def get_invs(self, token: Annotated[str, Depends(oauth2_scheme)]):
         id = self.auth(token)["id"]
         inv_service = self.__services["inventory"]
-        res = await inv_service.request("get", f"/api/inventories/user/{id}", list, ResponseType.PRIM)
-        return res
+        food_service = self.__services["food"]
+        invs = await inv_service.request("get", f"/api/inventories/user/{id}", list, ResponseType.PRIM)
+
+        food_ids = []
+        for inv in invs:
+            for item in inv["items"]:
+                food_ids.append(item["foodId"])
+        foods = await food_service.request("post", f"/api/foods/list", list, ResponseType.PRIM, json.dumps(food_ids))
+        for inv in invs:
+            for i in inv["items"]:
+                matching_food = next((f for f in foods if f["id"] == i["foodId"]), None)
+                i["name"] = "Unknown" if matching_food is None else matching_food["name"]
+
+        return invs
     
     async def post_inv(self, token: Annotated[str, Depends(oauth2_scheme)], inventory: schema.Inventory):
         id = self.auth(token)["id"]
