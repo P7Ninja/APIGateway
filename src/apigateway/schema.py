@@ -65,6 +65,7 @@ class InventoryItem(BaseModel):
     foodId: int = 0
     expirationDate: str = ""
     timestamp: str = "2023-01-01"
+    food: Food
 
 class Inventory(BaseModel):
     id: int = 0

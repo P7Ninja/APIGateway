@@ -124,8 +124,8 @@ class APIGateway:
         for inv in invs:
             for i in inv["items"]:
                 matching_food = next((f for f in foods if f["id"] == i["foodId"]), None)
-                i["name"] = "Unknown" if matching_food is None else matching_food["name"]
-
+                i["food"] = matching_food
+        print("invs: ", invs)
         return invs
     
     async def post_inv(self, token: Annotated[str, Depends(oauth2_scheme)], inventory: schema.Inventory):
@@ -136,6 +136,7 @@ class APIGateway:
     
     async def delete_inv(self, inv_id: int, inventory: schema.Inventory, token: Annotated[str, Depends(oauth2_scheme)]):
         id = self.auth(token)["id"]
+ 
         if id != inventory.userId:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
         if inventory.id != inv_id:
