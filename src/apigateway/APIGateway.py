@@ -33,18 +33,17 @@ class APIGateway:
         self.__app.add_api_route("/login", self.login, methods=["POST"], status_code=200)
 
         # inventory service
-        self.__app.add_api_route("/inventories", self.get_invs, methods=["GET"], status_code=200)
-        self.__app.add_api_route("/inventories/{inv_id}", self.post_to_inv, methods=["POST"], status_code=200)
-        self.__app.add_api_route("/inventories", self.post_inv, methods=["POST"], status_code=200)
-        self.__app.add_api_route("/inventories/{inv_id}", self.delete_inv, methods=["DELETE"], status_code=200)
-        self.__app.add_api_route("/inventories/{inv_id}/{item_id}", self.delete_inv_item, methods=["DELETE"], status_code=200)
-        self.__app.add_api_route("/inventories/{inv_id}", self.put_inv, methods=["PUT"], status_code=200)
+        self.__app.add_api_route("/inventories", self.get_invs, methods=["GET"], status_code=200, tags=["inventory"])
+        self.__app.add_api_route("/inventories/{inv_id}", self.post_to_inv, methods=["POST"], status_code=200, tags=["inventory"])
+        self.__app.add_api_route("/inventories", self.post_inv, methods=["POST"], status_code=200, tags=["inventory"])
+        self.__app.add_api_route("/inventories/{inv_id}", self.delete_inv, methods=["DELETE"], status_code=200, tags=["inventory"])
+        self.__app.add_api_route("/inventories/{inv_id}/{item_id}", self.delete_inv_item, methods=["DELETE"], status_code=200, tags=["inventory"])
+        # self.__app.add_api_route("/inventories/{inv_id}", self.put_inv, methods=["PUT"], status_code=200, tags=["inventory"]) # not implemented on frontend
 
         # food service
-        self.__app.add_api_route("/foods", self.get_foods, methods=["GET"], status_code=200)
-        self.__app.add_api_route("/foods/{id}", self.get_food_item, methods=["GET"], status_code=200)
-        self.__app.add_api_route("/foods/discounted", self.get_foods_discounted, methods=["GET"], status_code=200)
-        self.__app.add_api_route("/foods/list", self.post_foods_list, methods=["POST"], status_code=200)
+        self.__app.add_api_route("/foods", self.get_foods, methods=["GET"], status_code=200, tags=["food"])
+        self.__app.add_api_route("/foods/{id}", self.get_food_item, methods=["GET"], status_code=200, tags=["food"])
+        self.__app.add_api_route("/foods/discounted", self.get_foods_discounted, methods=["GET"], status_code=200, tags=["food"])
 
         # mealplan service
         self.__app.add_api_route("/meal", self.create_meal_plan, methods=["POST"], status_code=201, tags=["mealplan"])
@@ -99,20 +98,6 @@ class APIGateway:
             dict
         )
         return res
-
-    async def post_foods_list(self, food_ids: list[int] ):
-        food_service = self.__services["food"]
-        string = str(food_ids)
-        print(string)
-        res = await food_service.request(
-            "post", f"/api/foods/list",
-            list,
-            ResponseType.PRIM,
-            data = string
-        )
-        return res
-    
-    
     
     async def post_to_inv(self, token: Annotated[str, Depends(oauth2_scheme)], inv_id: int, inv_item: schema.InventoryItem):
         id = self.auth(token)["id"]
