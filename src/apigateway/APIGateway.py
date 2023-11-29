@@ -75,6 +75,39 @@ class APIGateway:
         user_service = self.__services["user"]
         res = await user_service.request("get", f"/user/{id}", dict)
         return res
+    async def login(self, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+        user_service = self.__services["user"]
+        res = await user_service.request(
+            "post", 
+            "/validate", 
+            dict,
+            data=json.dumps({"username": form_data.username, "password": form_data.password}),
+            )
+            
+        if not res["success"]:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"}
+                )
+        
+        token = self.__jwt.encode(form_data.username, res["id"], timedelta(days=float(self.__cfg["EXPIRE"])))
+        return {"access_token": token, "token_type": "bearer"}
+    
+    async def create_user(self, account: schema.UserCreate):
+        user_service = self.__services["user"]
+        res = await user_service.request(
+            "post", "/user",
+            dict,
+            data=account.model_dump_json()
+        )
+        return {"success": res["success"]}
+
+    async def delete_user(self, token: Annotated[str, Depends(oauth2_scheme)]):
+        id = self.auth(token)["id"]
+        user_service = self.__services["user"]
+        return await user_service.request("delete", f"/user/{id}", dict)
+
 
     async def get_foods(self, query: str):
         food_service = self.__services["food"]
@@ -154,39 +187,6 @@ class APIGateway:
         inventory_service = self.__services["inventory"]
         return await inventory_service.request("put", f"/api/inventories/{inventory.id}", dict)
 
-
-    async def create_user(self, account: schema.UserCreate):
-        user_service = self.__services["user"]
-        res = await user_service.request(
-            "post", "/user",
-            dict,
-            data=account.model_dump_json()
-        )
-        return {"success": res["success"]}
-
-    async def delete_user(self, token: Annotated[str, Depends(oauth2_scheme)]):
-        id = self.auth(token)["id"]
-        user_service = self.__services["user"]
-        return await user_service.request("delete", f"/user/{id}", dict)
-
-    async def login(self, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-        user_service = self.__services["user"]
-        res = await user_service.request(
-            "post", 
-            "/validate", 
-            dict,
-            data=json.dumps({"username": form_data.username, "password": form_data.password}),
-            )
-            
-        if not res["success"]:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Bearer"}
-                )
-        
-        token = self.__jwt.encode(form_data.username, res["id"], timedelta(days=float(self.__cfg["EXPIRE"])))
-        return {"access_token": token, "token_type": "bearer"}
     
     async def create_health(self, token: Annotated[str, Depends(oauth2_scheme)], health: schema.BaseHealthEntry):
         id = self.auth(token)["id"]
