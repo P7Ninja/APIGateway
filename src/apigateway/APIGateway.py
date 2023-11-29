@@ -157,7 +157,6 @@ class APIGateway:
             for i in inv["items"]:
                 matching_food = next((f for f in foods if f["id"] == i["foodId"]), None)
                 i["food"] = matching_food
-        print("invs: ", invs)
         return invs
     
     async def post_inv(self, token: Annotated[str, Depends(oauth2_scheme)], inventory: schema.Inventory):
@@ -174,7 +173,6 @@ class APIGateway:
         if inventory.id != inv_id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
         inventory_service = self.__services["inventory"]
-        print("inv id: ", inv_id)
         return await inventory_service.request("delete", f"/api/inventories/{inv_id}", dict, ResponseType.DICT)
     
     async def delete_inv_item(self, token: Annotated[str, Depends(oauth2_scheme)], inv_id: int, item_id: int):
