@@ -32,13 +32,17 @@ class APIGateway:
         self.__app.add_api_route("/user", self.delete_user, methods=["DELETE"], status_code=200, tags=["users"])
         self.__app.add_api_route("/login", self.login, methods=["POST"], status_code=200, tags=["users"])
 
+        # health service
+        self.__app.add_api_route("/health", self.create_health, methods=["POST"], status_code=201, tags=["health"])
+        self.__app.add_api_route("/health/{id}", self.delete_health, methods=["DELETE"], status_code=200, tags=["health"])
+        self.__app.add_api_route("/health/history", self.get_health_history, methods=["GET"], status_code=200, tags=["health"])
+
         # inventory service
         self.__app.add_api_route("/inventories", self.get_invs, methods=["GET"], status_code=200, tags=["inventory"])
         self.__app.add_api_route("/inventories/{inv_id}", self.post_to_inv, methods=["POST"], status_code=200, tags=["inventory"])
         self.__app.add_api_route("/inventories", self.post_inv, methods=["POST"], status_code=200, tags=["inventory"])
         self.__app.add_api_route("/inventories/{inv_id}", self.delete_inv, methods=["DELETE"], status_code=200, tags=["inventory"])
         self.__app.add_api_route("/inventories/{inv_id}/{item_id}", self.delete_inv_item, methods=["DELETE"], status_code=200, tags=["inventory"])
-        # self.__app.add_api_route("/inventories/{inv_id}", self.put_inv, methods=["PUT"], status_code=200, tags=["inventory"]) # not implemented on frontend
 
         # food service
         self.__app.add_api_route("/foods", self.get_foods, methods=["GET"], status_code=200, tags=["food"])
