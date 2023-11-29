@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from datetime import date, datetime
 from typing import Optional
+from typing import List
 
 # user service
 class BaseUser(BaseModel):
@@ -72,3 +73,35 @@ class Inventory(BaseModel):
     userId: int
     name: str
     items: list[InventoryItem] = []
+
+
+# Mealplan service
+
+class BaseMealPlan(BaseModel):
+    startDate: str = Field(examples=["2023-12-11"])
+    endDate: str = Field(examples=["2023-12-11"])
+
+class CreateBaseMealPlan(BaseMealPlan):
+    userID: int
+
+class MealPlanRecipe(BaseModel):
+    planID: int
+    recipeID: int
+
+class MealsPerDay(BaseModel):
+    planID: int
+    meals: int = Field(examples=[1])
+    totalCalories: int = Field(examples=[3000])
+    totalProtein: float = Field(examples=[200])
+    totalCarbohydrates: float = Field(examples=[300])
+    totalFat: float = Field(examples=[70])
+
+class GenerateMealPlan(BaseModel):
+    targets: List[float]
+    split_days: List[float]
+
+class CreateGenerateMealplan(GenerateMealPlan):
+    userID: int
+
+class Mealplan(BaseMealPlan):
+    id: int
