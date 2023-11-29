@@ -27,10 +27,10 @@ class APIGateway:
         )
 
     def configure_routes(self):
-        self.__app.add_api_route("/user", self.get_user, methods=["GET"], status_code=200)
-        self.__app.add_api_route("/user", self.create_user, methods=["POST"], status_code=201)
-        self.__app.add_api_route("/user", self.delete_user, methods=["DELETE"], status_code=200)
-        self.__app.add_api_route("/login", self.login, methods=["POST"], status_code=200)
+        self.__app.add_api_route("/user", self.get_user, methods=["GET"], status_code=200, response_model=schema.User, tags=["users"])
+        self.__app.add_api_route("/user", self.create_user, methods=["POST"], status_code=201, tags=["users"])
+        self.__app.add_api_route("/user", self.delete_user, methods=["DELETE"], status_code=200, tags=["users"])
+        self.__app.add_api_route("/login", self.login, methods=["POST"], status_code=200, tags=["users"])
 
         # inventory service
         self.__app.add_api_route("/inventories", self.get_invs, methods=["GET"], status_code=200, tags=["inventory"])
