@@ -162,6 +162,7 @@ class APIGateway:
     async def post_inv(self, token: Annotated[str, Depends(oauth2_scheme)], inventory: schema.Inventory):
         id = self.auth(token)["id"]
         inv_service = self.__services["inventory"]
+        inventory.userId = id
         res = await inv_service.request("post", f"/api/inventories", schema.Inventory, ResponseType.DICT, inventory.model_dump_json())
         return res
     
