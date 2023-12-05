@@ -105,3 +105,24 @@ class CreateGenerateMealplan(GenerateMealPlan):
 
 class Mealplan(BaseMealPlan):
     id: int
+
+# Recipe service
+class Recipe(BaseModel):
+    title: str
+    servings: int
+    instructions: str
+    url: str
+    energy: 'Energy'
+    ingredients: list['Ingredient']
+    tags: list[str]
+
+class Energy(BaseModel):
+    calories: float
+    fat: float
+    protein: float
+    carbohydrates: float
+    
+class Ingredient(BaseModel):
+    amount: float
+    unit: str
+    item: str

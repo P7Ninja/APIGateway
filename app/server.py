@@ -38,7 +38,8 @@ gateway = APIGateway(app, cfg, JWTEncoder(cfg), {
     "health": Service(cfg["HEALTH_SERVICE"]),
     "food": Service(cfg["FOOD_SERVICE"]),
     "inventory": Service(cfg["INVENTORY_SERVICE"]),
-    "mealplan": Service(cfg["MEALPLAN_SERVICE"])
+    "mealplan": Service(cfg["MEALPLAN_SERVICE"]),
+    "recipe": Service(cfg["RECIPE_SERVICE"])
     },
     [cfg['CLIENT']]
     )

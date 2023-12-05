@@ -57,6 +57,9 @@ class APIGateway:
         self.__app.add_api_route("/mealPlan", self.get_current_meal_plan, methods=["GET"], status_code=200, tags=["mealplan"])
         self.__app.add_api_route("/mealPlan/all", self.get_all_meal_plans, methods=["GET"], status_code=200, tags=["mealplan"])
         self.__app.add_api_route("/mealPlan", self.delete_meal_plan, methods=["DELETE"], status_code=200, tags=["mealplan"])
+
+        #recipe service
+        self.__app.add_api_route("recipe/{id}", self.get_recipe, methods=["GET"], status_code=200, tags=["recipy"])
     
 
     def auth(self, token: str):
@@ -78,7 +81,7 @@ class APIGateway:
     async def login(self, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
         user_service = self.__services["user"]
         res = await user_service.request(
-            "post", 
+            "post",
             "/validate", 
             dict,
             data=json.dumps({"username": form_data.username, "password": form_data.password}),
@@ -276,4 +279,7 @@ class APIGateway:
         )
         return {"success": True}
         
-
+    async def get_recipe(self, token: Annotated[str, Depends(oauth2_scheme)], id: int):
+        self.auth(token)
+        recipe_service = self.__services["recipe"]
+        return await recipe_service.request("get", f"/recipe/{id}", schema.Recipe, ResponseType.PRIM)
