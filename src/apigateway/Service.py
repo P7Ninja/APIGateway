@@ -29,7 +29,7 @@ class Service:
                       data: str = None,
                       ) -> T:
         async with httpx.AsyncClient() as client:
-            req = client.build_request(method, self.__dest + endpoint, data=data)
+            req = client.build_request(method, self.__dest + endpoint, data=data, headers= {"Content-Type": "application/json"})
             res = (await asyncio.gather(client.send(req)))[0]
 
             if res.status_code in range(400, 599):
@@ -41,4 +41,6 @@ class Service:
                     status_code=res.status_code, 
                     detail=detail
                     )
+            if res.content == b'': # handle responses with no json in body
+                raise HTTPException(res.status_code)
             return self.__types[res_type](res_model, res.json())

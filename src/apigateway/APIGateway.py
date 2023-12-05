@@ -30,12 +30,26 @@ class APIGateway:
         self.__app.add_api_route("/user", self.get_user, methods=["GET"], status_code=200, response_model=schema.User, tags=["users"])
         self.__app.add_api_route("/user", self.create_user, methods=["POST"], status_code=201, tags=["users"])
         self.__app.add_api_route("/user", self.delete_user, methods=["DELETE"], status_code=200, tags=["users"])
-        self.__app.add_api_route("/login", self.login, methods=["POST"], status_code=200, tags=["auth"])
+        self.__app.add_api_route("/login", self.login, methods=["POST"], status_code=200, tags=["users"])
 
+        # health service
         self.__app.add_api_route("/health", self.create_health, methods=["POST"], status_code=201, tags=["health"])
         self.__app.add_api_route("/health/{id}", self.delete_health, methods=["DELETE"], status_code=200, tags=["health"])
         self.__app.add_api_route("/health/history", self.get_health_history, methods=["GET"], status_code=200, tags=["health"])
 
+        # inventory service
+        self.__app.add_api_route("/inventories", self.get_invs, methods=["GET"], status_code=200, tags=["inventory"])
+        self.__app.add_api_route("/inventories/{inv_id}", self.post_to_inv, methods=["POST"], status_code=200, tags=["inventory"])
+        self.__app.add_api_route("/inventories", self.post_inv, methods=["POST"], status_code=200, tags=["inventory"])
+        self.__app.add_api_route("/inventories/{inv_id}", self.delete_inv, methods=["DELETE"], status_code=200, tags=["inventory"])
+        self.__app.add_api_route("/inventories/{inv_id}/{item_id}", self.delete_inv_item, methods=["DELETE"], status_code=200, tags=["inventory"])
+
+        # food service
+        self.__app.add_api_route("/foods", self.get_foods, methods=["GET"], status_code=200, tags=["food"])
+        self.__app.add_api_route("/foods/{id}", self.get_food_item, methods=["GET"], status_code=200, tags=["food"])
+        self.__app.add_api_route("/foods/discounted", self.get_foods_discounted, methods=["GET"], status_code=200, tags=["food"])
+
+        # mealplan service
         self.__app.add_api_route("/meal", self.create_meal_plan, methods=["POST"], status_code=201, tags=["mealplan"])
         self.__app.add_api_route("/mealRecipe", self.create_meal_plan_recipe, methods=["POST"], status_code=201, tags=["mealplan"])
         self.__app.add_api_route("/mealsPerDay", self.create_meals_per_day, methods=["POST"], status_code=201, tags=["mealplan"])
@@ -44,24 +58,9 @@ class APIGateway:
         self.__app.add_api_route("/mealPlan/all", self.get_all_meal_plans, methods=["GET"], status_code=200, tags=["mealplan"])
         self.__app.add_api_route("/mealPlan", self.delete_meal_plan, methods=["DELETE"], status_code=200, tags=["mealplan"])
 
-    async def login(self, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
-        user_service = self.__services["user"]
-        res = await user_service.request(
-            "post", 
-            "/validate", 
-            dict,
-            data=json.dumps({"username": form_data.username, "password": form_data.password}),
-            )
-            
-        if not res["success"]:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Bearer"}
-                )
-        
-        token = self.__jwt.encode(form_data.username, res["id"], timedelta(days=float(self.__cfg["EXPIRE"])))
-        return {"access_token": token, "token_type": "bearer"}
+        #recipe service
+        self.__app.add_api_route("recipe/{id}", self.get_recipe, methods=["GET"], status_code=200, tags=["recipe"])
+    
 
     def auth(self, token: str):
         credentials_exception = HTTPException(
@@ -77,9 +76,27 @@ class APIGateway:
     async def get_user(self, token: Annotated[str, Depends(oauth2_scheme)]):
         id = self.auth(token)["id"]
         user_service = self.__services["user"]
-        return await user_service.request("get", f"/user/{id}", dict)
-
-
+        res = await user_service.request("get", f"/user/{id}", dict)
+        return res
+    async def login(self, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]):
+        user_service = self.__services["user"]
+        res = await user_service.request(
+            "post",
+            "/validate", 
+            dict,
+            data=json.dumps({"username": form_data.username, "password": form_data.password}),
+            )
+            
+        if not res["success"]:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"}
+                )
+        
+        token = self.__jwt.encode(form_data.username, res["id"], timedelta(days=float(self.__cfg["EXPIRE"])))
+        return {"access_token": token, "token_type": "bearer"}
+    
     async def create_user(self, account: schema.UserCreate):
         user_service = self.__services["user"]
         res = await user_service.request(
@@ -94,6 +111,85 @@ class APIGateway:
         user_service = self.__services["user"]
         return await user_service.request("delete", f"/user/{id}", dict)
 
+
+    async def get_foods(self, query: str):
+        food_service = self.__services["food"]
+        res = await food_service.request(
+            "get", f"/api/foods?query={query}",
+            list,
+            ResponseType.PRIM
+        )
+        return res
+    
+    async def get_food_item(self, id: int):
+        food_service = self.__services["food"]
+        res = await food_service.request(
+            "get", f"/api/foods/{id}",
+            schema.Food,
+            dict
+        )
+        return res
+    
+    async def get_foods_discounted(self):
+        food_service = self.__services["food"]
+        res = await food_service.request(
+            "get", f"/api/foods/discounted",
+            schema.Food,
+            dict
+        )
+        return res
+    
+    async def post_to_inv(self, token: Annotated[str, Depends(oauth2_scheme)], inv_id: int, inv_item: schema.InventoryItem):
+        id = self.auth(token)["id"]
+        inv_service = self.__services["inventory"]
+        res = await inv_service.request("post", f"/api/inventories/{inv_id}", schema.Inventory, dict, inv_item.model_dump_json())
+        return res
+    
+    async def get_invs(self, token: Annotated[str, Depends(oauth2_scheme)]):
+        id = self.auth(token)["id"]
+        inv_service = self.__services["inventory"]
+        food_service = self.__services["food"]
+        invs = await inv_service.request("get", f"/api/inventories/user/{id}", list, ResponseType.PRIM)
+
+        food_ids = []
+        for inv in invs:
+            for item in inv["items"]:
+                food_ids.append(item["foodId"])
+        foods = await food_service.request("post", f"/api/foods/list", list, ResponseType.PRIM, json.dumps(food_ids))
+        for inv in invs:
+            for i in inv["items"]:
+                matching_food = next((f for f in foods if f["id"] == i["foodId"]), None)
+                i["food"] = matching_food
+        return invs
+    
+    async def post_inv(self, token: Annotated[str, Depends(oauth2_scheme)], inventory: schema.Inventory):
+        id = self.auth(token)["id"]
+        inv_service = self.__services["inventory"]
+        inventory.userId = id
+        res = await inv_service.request("post", f"/api/inventories", schema.Inventory, ResponseType.DICT, inventory.model_dump_json())
+        return res
+    
+    async def delete_inv(self, inv_id: int, inventory: schema.Inventory, token: Annotated[str, Depends(oauth2_scheme)]):
+        id = self.auth(token)["id"]
+ 
+        if id != inventory.userId:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        if inventory.id != inv_id:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
+        inventory_service = self.__services["inventory"]
+        return await inventory_service.request("delete", f"/api/inventories/{inv_id}", dict, ResponseType.DICT)
+    
+    async def delete_inv_item(self, token: Annotated[str, Depends(oauth2_scheme)], inv_id: int, item_id: int):
+        id = self.auth(token)["id"]
+        inventory_service = self.__services["inventory"]
+        return await inventory_service.request("delete", f"/api/inventories/{inv_id}/{item_id}", dict)
+    
+    async def put_inv(self, token: Annotated[str, Depends(oauth2_scheme)], inventory: schema.Inventory):
+        id = self.auth(token)["id"]
+        inventory_service = self.__services["inventory"]
+        return await inventory_service.request("put", f"/api/inventories/{inventory.id}", dict)
+
+    
     async def create_health(self, token: Annotated[str, Depends(oauth2_scheme)], health: schema.BaseHealthEntry):
         id = self.auth(token)["id"]
         create_health = schema.CreateHealthEntry(userID=id, **health.model_dump())
@@ -183,4 +279,7 @@ class APIGateway:
         )
         return {"success": True}
         
-
+    async def get_recipe(self, token: Annotated[str, Depends(oauth2_scheme)], id: int):
+        self.auth(token)
+        recipe_service = self.__services["recipe"]
+        return await recipe_service.request("get", f"/recipe/{id}", schema.Recipe, ResponseType.PRIM)

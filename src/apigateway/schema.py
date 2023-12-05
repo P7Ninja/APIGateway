@@ -26,7 +26,6 @@ class User(BaseUser):
     target_energy: Energy
 
 # Health service
-
 class BaseHealthEntry(BaseModel):
     dateStamp: datetime
     height: Optional[float] = None
@@ -34,12 +33,46 @@ class BaseHealthEntry(BaseModel):
     fatPercentage: Optional[float] = None
     musclePercentage:Optional[float] = None
     waterPercentage: Optional[float] = None
-        
+
 class CreateHealthEntry(BaseHealthEntry):
     userID: int  
-
 class HealthEntry(CreateHealthEntry):
     id: int
+# Food service
+class Food(BaseModel):
+    id: int
+    name: str
+    price: float
+    priceKg: float
+    discount: float
+    vendor: str
+    category: str
+    fat: float
+    carbs: float
+    protein: float
+    cal: float
+
+class Discount(BaseModel):
+    id: int
+    name: str
+    price: float
+    discount: float
+    vendor: str
+    category: str
+
+#Inventory service
+class InventoryItem(BaseModel):
+    id: int = 0
+    foodId: int = 0
+    expirationDate: str = ""
+    timestamp: str = "2023-01-01"
+    food: Food = None
+
+class Inventory(BaseModel):
+    id: int = 0
+    userId: int
+    name: str
+    items: list[InventoryItem] = []
 
 
 # Mealplan service
@@ -72,3 +105,24 @@ class CreateGenerateMealplan(GenerateMealPlan):
 
 class Mealplan(BaseMealPlan):
     id: int
+
+# Recipe service
+class Recipe(BaseModel):
+    title: str
+    servings: int
+    instructions: str
+    url: str
+    energy: 'Energy'
+    ingredients: list['Ingredient']
+    tags: list[str]
+
+class Energy(BaseModel):
+    calories: float
+    fat: float
+    protein: float
+    carbohydrates: float
+    
+class Ingredient(BaseModel):
+    amount: float
+    unit: str
+    item: str
