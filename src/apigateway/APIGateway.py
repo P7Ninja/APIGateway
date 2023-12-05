@@ -59,7 +59,7 @@ class APIGateway:
         self.__app.add_api_route("/mealPlan", self.delete_meal_plan, methods=["DELETE"], status_code=200, tags=["mealplan"])
 
         #recipe service
-        self.__app.add_api_route("recipe/{id}", self.get_recipe, methods=["GET"], status_code=200, tags=["recipe"])
+        self.__app.add_api_route("/recipe/{id}", self.get_recipe, methods=["GET"], status_code=200, tags=["recipe"])
     
 
     def auth(self, token: str):
@@ -279,7 +279,7 @@ class APIGateway:
         )
         return {"success": True}
         
-    async def get_recipe(self, token: Annotated[str, Depends(oauth2_scheme)], id: int):
+    async def get_recipe(self, token: Annotated[str, Depends(oauth2_scheme)], id: int = Path(...)):
         self.auth(token)
         recipe_service = self.__services["recipe"]
-        return await recipe_service.request("get", f"/recipe/{id}", schema.Recipe, ResponseType.PRIM)
+        return await recipe_service.request("get", f"/recipe/{id}", dict, res_type=ResponseType.PRIM)
