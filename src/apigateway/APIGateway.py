@@ -59,7 +59,7 @@ class APIGateway:
         self.__app.add_api_route("/mealPlan", self.delete_meal_plan, methods=["DELETE"], status_code=200, tags=["mealplan"])
 
         #recipe service
-        self.__app.add_api_route("recipe/{id}", self.get_recipe, methods=["GET"], status_code=200, tags=["recipy"])
+        self.__app.add_api_route("recipe/{id}", self.get_recipe, methods=["GET"], status_code=200, tags=["recipe"])
     
 
     def auth(self, token: str):
